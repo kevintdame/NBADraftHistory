@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans&display=swap" rel="stylesheet">
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Stacked Bar Chart for Patriots Draft Picks by Season</title>
+        <!-- Include Chart.js -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
+        <!-- Include PapaParse for CSV parsing -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.0.2/papaparse.min.js"></script>
+        <!-- Include the Datalabels plugin for Chart.js -->
+        <!-- First, include Chart.js -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
+
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+
+
+    <style>
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 10px;
+            background-color: black; /* Change this color to your desired value */
+            color: white;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            margin-bottom: 0px;
+        }
+
+        .chart-title {
+            font-size: 40px;
+            font-family: Helvetica, sans-serif;
+            margin-top: 10px;
+            margin-bottom: 0px;
+            margin-left: 25px;
+            padding: 0;
+            /* Adjust the left margin if necessary */
+        }
+
+       
+
+
+
+        body {
+        background-color: black;
+        color: white;
+        margin: 0;
+        padding: 0;
+    }
+
+    .season-label {
+        text-align: center;
+        margin-top: 5px;
+        color: white;
+        font-family: Helvetica, Arial, sans-serif;
+        font-size: 16px;
+    }
+
+
+
+    #scrollContainer {
+        display: flex;
+        flex-direction: row;
+        overflow-x: auto; /* Enable horizontal scrolling */
+        width: calc(100% - 40px); /* Take up full viewport width minus the left and right margins */
+        margin-left: 20px; /* Left margin */
+        margin-right: 20px; /* Right margin if needed */
+        height: 750;
+        /* Other styles remain unchanged */
+    }
+
+        /* Base styles for .chartWrapper that apply to all screen sizes */
+        .chartWrapper {
+            /* Keep the right and left margins if they make sense for your layout on larger screens */
+            margin: 0px 0px; 
+            min-width: 150px; /* You can keep this if you want a minimum width on larger screens */
+            height: 750px; /* Keep your fixed height or adjust as needed */
+        }
+
+        /* Specific styles for the first and last chart wrapper */
+        .chartWrapper:first-of-type {
+            margin-left: 0; /* Remove the left margin for the first chart */
+        }
+        .chartWrapper:last-of-type {
+            margin-right: 0; /* Remove the right margin for the last chart */
+        }
+
+      
+
+
+        canvas {
+            background-color: black; /* Canvas background */
+            width: 100%; /* Full width of the wrapper */
+            height: 100%; /* Full height of the wrapper */
+        }
+
+        .x-axis-line {
+            border-top: 3px solid white; /* This creates the horizontal line */
+            width: 100%; /* Match the width of the chart */
+            position: absolute; /* Position it absolutely within the chartWrapper */
+            bottom: 18px; /* Start at the bottom of the chartWrapper */
+            left: 0; /* Align to the left edge */
+            z-index: 10; /* Make sure it's above other elements */
+        }
+
+        
+        .chartWrapper {
+            /* Add existing styles here */
+            position: relative; /* Needed to position children absolutely within the wrapper */
+        }
+
+        .menu-label {
+            display: block; /* or inline-block, depending on how you want it displayed */
+            color: black; /* Color of the menu label text */
+            padding: 5px; /* Add some padding around the text */
+            font-size: 18px; /* Set the font size for the label */
+            font-family: 'Helvetica', sans-serif; /* Use the imported Google Font */
+            text-align: left; /* Center the text */
+            background-color: rgb(3, 169, 244);
+
+            /* Add more styling as needed */
+        }
+            
+        
+        /* Style the dropdown container */
+            .team-select-container {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: inline-block; /* Ensure it's inline for alignment */
+            font-family: 'Helvetica', sans-serif; /* Use the imported Google Font */
+            font-size: 18px; /* Set the font size for the label */
+
+
+        }
+
+        .team-select {
+            /* existing styles */
+            font-family: 'Helvetica', sans-serif; /* Specify the font-family here */
+            font-size: 18px; /* And the font-size here */
+        }
+
+        
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 600px) {
+            .team-select {
+                width: 100%; /* Full width on smaller screens */
+                margin-bottom: 10px; /* Add margin at the bottom */
+            }
+        }
+
+        /* Style for the subtitle text */
+        .subtitle {
+            background-color: black; /* Make sure this color stands out */
+            color: white;
+            font-size: 12px;
+            font-family: Helvetica;
+            text-align: right;
+            margin-right: 50px;
+            margin-top: 15px;
+            /* Adjust this margin-top value if your header is fixed to top */
+        }
+
+        
+
+
+
+        .title {
+            font-size: 24px; /* Adjust font size as needed */
+            margin: 0;
+            padding: 0;
+            margin-left: 10px;
+        }
+
+        .dropdown {
+            padding: 5px;
+            margin-right: 10px; /* Aligns the dropdown to the right */
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: flex-start; /* Aligns items to the start of the container */
+            height: 65px; /* Adjust this based on your needs */
+            padding-top: 0px; /* This is the gap from the top */
+            margin-left: 10;
+            margin-bottom: 5;
+
+        }
+
+
+        .logo {
+            max-height: 60px;
+            max-width: 100px;
+            height: auto;
+            width: auto;
+            object-fit: contain;
+            margin-left: 20px;
+            padding-top: 5px; /* This is the gap from the top */
+
+            /* Removed margin-top as it's now controlled by the container */
+        }
+
+        footer {
+            bottom: 0;
+            width: 100%;
+            left: 0; /* Align to the left side of the page */
+            background-color: #f1f1f1; /* Background color of the footer */
+            text-align: left; /* Align the content inside to the left */
+            padding: 10px; /* Add some padding */
+            background-color: #000000; /* Background color of the footer set to black */
+            font-family: Helvetica;
+        }
+
+
+        .footer-content {
+            
+            align-items: center;
+            width: 100%;
+        }
+
+        .legend {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            margin-left: 25px;
+
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-right: 20px; /* Adjust spacing between legend items */
+
+        }
+
+        .color-box {
+            width: 20px; /* Width of the color box */
+            height: 20px; /* Height of the color box */
+            margin-right: 5px; /* Spacing between the color box and the label */
+        }
+
+        .source {
+            margin-left: 20px; /* Adjust the space between the legend and the source text */
+            /* Additional styling for the source text, if needed */
+        }
+
+
+
+    </style>
+</head>
+<body>
+
+    <h1 class="chart-title" id="chartTitle">NFL Draft Value</h1>
+    <div class="team-select-container">
+        <span class="menu-label">MENU</span>
+        <select id="teamSelect" class="team-select">
+            <option value="csvFiles/HawksDraft.csv"> Atlanta Hawks</option>
+            <option value="csvFiles/CelticsDraft.csv">Boston Celtics</option>
+            <option value="csvFiles/NetsDraft.csv">Brooklyn Nets</option>
+            <option value="csvFiles/HornetsDraft.csv"> Charlotte Hornets</option>
+            <option value="csvFiles/BullsDraft.csv">Chicago Bulls</option>
+            <option value="csvFiles/CavaliersDraft.csv">Cleveland Cavaliers</option>
+            <option value="csvFiles/MavericksDraft.csv"> Dallas Mavericks</option>
+            <option value="csvFiles/NuggetsDraft.csv">Denver Nuggets</option>
+            <option value="csvFiles/PistonsDraft.csv">Detroit Pistons</option>
+            <option value="csvFiles/WarriorsDraft.csv">Golden State Warriors</option>
+            <option value="csvFiles/RocketsDraft.csv">Houston Rockets</option>
+            <option value="csvFiles/PacersDraft.csv">Indiana Pacers</option>
+            <option value="csvFiles/ClippersDraft.csv">Los Angeles Clippers</option>
+            <option value="csvFiles/LakersDraft.csv">Los Angeles Lakers</option>
+            <option value="csvFiles/GrizzliesDraft.csv">Memphis Grizzlies</option>
+            <option value="csvFiles/HeatDraft.csv">Miami Heat</option>
+            <option value="csvFiles/BucksDraft.csv">Milwaukee Bucks</option>
+            <option value="csvFiles/TimberwolvesDraft.csv">Minnesota Timberwolves</option>
+            <option value="csvFiles/PelicansDraft.csv">New Orleans Pelicans</option>
+            <option value="csvFiles/KnicksDraft.csv">New York Knicks</option>
+            <option value="csvFiles/ThunderDraft.csv">Oklahoma City Thunder </option>
+            <option value="csvFiles/MagicDraft.csv">Orlando Magic</option>
+            <option value="csvFiles/76ersDraft.csv">Philadelphia 76ers</option>
+            <option value="csvFiles/SunsDraft.csv">Phoenix Suns</option>
+            <option value="csvFiles/TrailblazersDraft.csv">Portland Trail Blazers</option>
+            <option value="csvFiles/KingsDraft.csv">Sacramento Kings</option>
+            <option value="csvFiles/SpursDraft.csv">San Antonio Spurs</option>
+            <option value="csvFiles/RaptorsDraft.csv">Toronto Raptors</option>
+            <option value="csvFiles/JazzDraft.csv">Utah Jazz</option>
+            <option value="csvFiles/WizardsDraft.csv">Washington Wizards</option>           
+        </select>
+    </div>
+    
+
+    <div class="logo-container">
+        <img src="logos/hawksLogo.png" alt="Team Logo" class="logo" id="teamLogo">
+    </div>
+    
+
+
+    <div id="scrollContainer"></div>
+
+    <footer>
+        <div class="legend">
+            <!-- New legend item with a transparent background and a red border -->
+           
+           
+            <div class="legend-item">
+                <span class="color-box" style="background-color: rgb(69, 182, 254); border: 2px solid black;"></span>
+                <span class="label">Player VORP (Value Over Replacement Value).</span>
+            </div>
+            <div class="legend-item">
+                <span class="color-box" style="background-color:rgb(105, 193, 215); border: 2px solid black;"></span>
+                <span class="label">Player traded on draft night </span>
+            </div>
+            <div class="legend-item">
+                <span class="color-box" style="background-color: orange; border: 2px solid black;"></span>
+                <span class="label">Player value off the charts </span>
+            </div>
+            <div class="legend-item">
+                <span class="color-box" style="background-color: transparent; border: 2px solid white;"></span>
+                <span class="label">Zero or negative player value</span>
+            </div>
+            <div class="legend-item">
+                <span class="color-box" style="background-color: transparent; border: 5px solid white;"></span>
+                <span class="label">Average draft value per team</span>
+            </div>
+            <div class="legend-item">
+                <span class="label">Source: Pro Basketball Reference</span>
+            </div>
+        </div>
+    </footer>
+    
+
+
+<script>
+
+    const boxes = [
+        { x: 10, y: 425, width: 125, height: 700 } // Example box
+    ];
+
+
+    // Define the heights of the boxes. Ensure each value is unique if you want different heights.
+    //const boxHeights = [100, 120, 140, 160, 180, 200, 220, 240, 260, 280]; // etc...
+
+    const boxOverlayPlugin = {
+        id: 'boxOverlayPlugin',
+        afterDatasetsDraw: (chart, args, options) => {
+            const ctx = chart.ctx;
+            const boxHeight = options.boxHeight;
+            const yAxisZeroPixel = chart.scales.y.getPixelForValue(0);
+            const meta = chart.getDatasetMeta(0); // Assuming there is one bar per chart
+
+            ctx.save();
+            ctx.lineWidth = 5; // Set the stroke thickness
+            ctx.beginPath();
+            ctx.rect(meta.data[0].x - meta.data[0].width / 2, yAxisZeroPixel - boxHeight, meta.data[0].width, boxHeight);
+            ctx.strokeStyle = 'white'; // Set the box border color to red
+            ctx.stroke();
+            ctx.restore();
+        }
+    };
+    Chart.register(boxOverlayPlugin);
+
+
+
+
+
+    
+
+    // Register the plugin
+    Chart.register(ChartDataLabels);
+    
+    async function fetchCsvData(filename) {
+        const response = await fetch(filename);
+        const reader = response.body.getReader();
+        const result = await reader.read();
+        const decoder = new TextDecoder('utf-8');
+        const csv = decoder.decode(result.value);
+        return Papa.parse(csv, { header: true, dynamicTyping: true, skipEmptyLines: true }).data;
+    }
+
+    document.getElementById('teamSelect').addEventListener('change', function(event) {
+        const selectedFile = event.target.value;
+        const selectedTeamName = event.target.options[event.target.selectedIndex].text;
+
+        // Update the chart title with the selected team name
+        document.getElementById('chartTitle').textContent = `NFL Draft Value: ${selectedTeamName}`;
+
+        // Update the logo based on the selected team
+        updateTeamLogo(selectedTeamName);
+
+        // Clear the existing charts
+        document.getElementById('scrollContainer').innerHTML = '';
+        // Fetch the new data and generate the charts
+        generateCharts(selectedFile);
+    });
+
+    function updateTeamLogo(teamName) {
+        const logoMap = {
+            "Atlanta Hawks": "logos/hawksLogo.png",
+            "Boston Celtics": "logos/celticsLogo.png",
+            "Brooklyn Nets": "logos/netsLogo.png",
+            "Charlotte Hornets": "logos/hornetsLogo.png",
+            "Chicago Bulls": "logos/bullsLogo.png",
+            "Cleveland Cavaliers": "logos/cavaliersLogo.png",
+            "Dallas Mavericks": "logos/mavericksLogo.png",
+            "Denver Nuggets": "logos/nuggetsLogo.png",
+            "Detroit Pistons": "logos/pistonsLogo.png",
+            "Golden State Warriors": "logos/warriorsLogo.png",
+            "Houston Rockets": "logos/rocketsLogo.png",
+            "Indiana Pacers": "logos/pacersLogo.png",
+            "Los Angeles Clippers": "logos/clippersLogo.png",
+            "Los Angeles Lakers": "logos/lakersLogo.png",
+            "Memphis Grizzlies": "logos/grizzliesLogo.png",
+            "Miami Heat": "logos/heatLogo.png",
+            "Milwaukee Bucks": "logos/bucksLogo.png",
+            "Minnesota Timberwolves": "logos/timberwolvesLogo.png",
+            "New Orleans Pelicans": "logos/pelicansLogo.png",
+            "New York Knicks": "logos/knicksLogo.png",
+            "Oklahoma City Thunder": "logos/thunderLogo.png",
+            "Orlando Magic": "logos/magicLogo.png",
+            "Philadelphia 76ers": "logos/76ersLogo.png",
+            "Phoenix Suns": "logos/sunLogo.png",
+            "Portland Trail Blazers": "logos/trailblazersLogo.png",
+            "Sacramento Kings": "logos/kingsLogo.png",
+            "San Antonio Spurs": "logos/spursLogo.png",
+            "Toronto Raptors": "logos/raptorsLogo.png",
+            "Utah Jazz": "logos/jazzLogo.png",
+            "Washington Wizards": "logos/wizardsLogo.png",
+        };
+
+        const logoPath = logoMap[teamName] || "logos/defaultLogo.png"; // default logo if team not found
+        document.getElementById('teamLogo').src = logoPath;
+    }
+
+
+    const globalMaxWavPerSeason = 80; // SHOULD BE 155 for LEBRON  Set this to whatever maximum you want for the Y scale
+
+    // Color interpolation function
+    function interpolateColor(color1, color2, factor) {
+        var result = color1.slice();
+        for (var i = 0; i < 3; i++) {
+            result[i] = Math.round(result[i] + factor * (color2[i] - color1[i]));
+        }
+        return `rgb(${result[0]}, ${result[1]}, ${result[2]})`;
+    }
+
+    // Start and end colors as RGB arrays
+    //var startColor = [3, 169, 244]; // RICKY WILLIAMS COLOR!!!
+    var startColor = [ 143, 211, 254]; // RICKY WILLIAMS COLOR!!!
+
+   
+    var endColor = [0, 0, 0]; // Yellow
+
+    
+    function createChart(container, seasonData, season, globalMaxWavPerSeason, boxHeight) {
+        const ctx = container.getContext('2d');
+        const minimumBarHeight = 1.5; // Set a minimum bar height for '0' wAV values
+
+        // Add these lines right after the variable declarations
+        const defaultBarColor = 'rgb(69, 182, 254)'; // Replace with your desired color
+        const specialColorForLeBron = 'orange'; // Replace with your desired color
+
+            // Sort seasonData by wAV in descending order to have the largest values at the bottom
+        // Sort by Pick in ascending order, ensuring Pick is treated as an integer
+        seasonData.sort((a, b) => a.Pick - b.Pick);
+       // seasonData.sort((a, b) => b.wAV - a.wAV);
+
+        // Create datasets for the chart, each with a label set to the player's last name
+        const datasets = seasonData.map(player => {
+            let wAV = player.VORP || 0;
+            const originalWav = wAV;
+
+            // Treat empty 'To' and 'wAV' as 0
+            const round = player.Rd || "Not available"; // Extract the round value
+            const toYear = player.To || season; // Use the draft year as 'To' if 'To' is empty
+            // Store the original wAV value
+                wAV = wAV < 0 ? 0 : wAV;
+                
+              // If wAV is 0 or negative, make it the minimum bar height and set bar color to black
+              let barColor;
+              if (player.Player.includes('(↳') && wAV >= 0.5) {
+                    barColor = 'rgb(105, 193, 215)'; // Set bar color to red if the player's name contains '(↳'
+                } else if (wAV < 0.5) {
+                    wAV = minimumBarHeight; // make negative and negligible values zero and min bar height
+                    barColor = 'black'; // Set bar color to black for wAV less than 0.5
+                } else if (wAV > 80) {
+                    barColor = specialColorForLeBron; // Special color for LeBron James
+                } else {
+                    barColor = defaultBarColor; // Default color for all other players
+                }
+
+                console.log(`Player: ${player.Player}, wAV: ${originalWav}, barColor: ${barColor}`);
+
+
+            // Store full name for tooltip display
+            const fullName = player.Player;
+
+            function extractLastName(fullName) {
+                // Remove any appendage from the full name
+                let cleanName = fullName.replace(/\(↳.*?\)/, '').trim();
+
+                // Split the cleaned name to get the last name
+                let nameParts = cleanName.split(' ');
+                let lastName = nameParts.pop(); // Get the last part of the name
+
+                // Check for special cases and adjust last name accordingly
+                if (['HOF', 'II', 'III', 'Sr.', 'Jr.'].includes(lastName)) {
+                    lastName = nameParts.pop(); // Use the second last part
+                }
+
+                return lastName;
+            }
+
+
+
+            // Split the name into parts
+            const nameParts = fullName.split(' ');
+            // Check if the last part is 'HOF', and if so, use the second-to-last part as the last name
+            //const lastName = nameParts[nameParts.length - 1] === 'HOF' || nameParts[nameParts.length - 1] === 'II' || nameParts[nameParts.length - 1] === 'III' || nameParts[nameParts.length - 1] === 'Sr.' || nameParts[nameParts.length - 1] === 'Jr.' ? nameParts[nameParts.length - 2] : nameParts.pop();
+            
+            const lastName = extractLastName(fullName);
+            console.log(lastName); // Outputs: "Bane"
+            
+            
+            const playerWav = wAV; // Use the processed wAV value
+
+            return {
+                label: lastName, // Use the last name or second-to-last if the last is 'HOF'
+                fullName: fullName, // Full name for tooltip
+                data: [playerWav], // Just the processed wAV value
+                Rd: round, // Include the round information at the dataset level, not inside `data`               
+                backgroundColor: barColor, // Use the bar color defined above
+                originalWav: originalWav, // Include this line
+                // ...other dataset configurations
+            };
+        });
+
+      
+        // Define a separate color for zero wAV values
+        const zeroWavColor = 'black';
+       // const hofColor = 'red'; // Define a unique color for HOF players
+        //const specialPBColor = 'orange'; // Define a unique color for players with PB > 0
+       
+
+        // Create the chart
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: [season], // Label for the x-axis
+                datasets: datasets.map((dataset, index) => ({
+                    ...dataset,
+                    borderColor: dataset.originalWav >= 0.5 ? 'black' : 'white', // Conditional border color
+                    borderWidth: 1,
+                })),
+
+            },
+            options: {
+                scales: {
+                    x: {
+                        stacked: true,
+                        ticks: {
+                            display: true,
+                            color: 'white',
+                            font: {
+                                size: 14,
+                                family: "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif",
+                            },
+                        }
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        max: globalMaxWavPerSeason,
+                        display: false,
+                        grid: {
+                            display: false,
+                        }
+                    }
+                },
+                barThickness: 125, // Set the bar thickness (in pixels)
+                categoryPercentage: 0.8,
+                barPercentage: 0.9,
+                plugins: {
+                    tooltip: {
+                        bodyFont: {
+                            size: 12 // Adjust this value as needed
+                        },
+                        minWidth: 300, // Adjust this value as needed
+                        padding: 0, // Adjust padding as needed
+                        callbacks: {
+                            title: function() {
+                                // Return empty string to remove the title
+                                return '';
+                            },
+                            label: function(context) {
+                                // Access full name and wAV value from the dataset for the tooltip
+                                const fullName = context.dataset.fullName;
+                                const wav = Math.round(context.dataset.originalWav);
+                                // Split the full name and wAV value into two lines
+                                return [fullName, 'VORP ' + wav];
+                            }
+                        }
+                    },
+                    legend: {
+                        display: false // Disable the legend
+                    },
+                    datalabels: {
+                        color: function(context) {
+                            return context.dataset.originalWav >= 0.5 ? 'black' : 'white'; // Conditional text color
+                        },                     
+                        anchor: 'center',
+                        align: 'center',
+                        formatter: function(value, context) {
+                            // Return the label from the datasets array
+                            return context.dataset.label;
+                        }
+                    },
+                    boxOverlayPlugin: {
+                        boxHeight: boxHeight // Pass the dynamic height to the plugin
+                    }
+                },
+                maintainAspectRatio: false,
+                responsive: true
+            }
+
+        });
+    }
+
+
+    async function fetchAverageWavData(filename) {
+        const response = await fetch(filename);
+        const reader = response.body.getReader();
+        const result = await reader.read();
+        const decoder = new TextDecoder('utf-8');
+        const csv = decoder.decode(result.value);
+        const parsedData = Papa.parse(csv, { header: true, dynamicTyping: true, skipEmptyLines: true }).data;
+        
+        const averageWavByYear = {};
+        parsedData.forEach(item => {
+            averageWavByYear[item.Year] = item['Average wAV']*10;
+        });
+
+        return averageWavByYear;
+    }
+
+
+   
+
+    async function generateCharts(filename, boxHeights) {
+        const data = await fetchCsvData(filename);
+        const averageWavByYear = await fetchAverageWavData('average_wav_per_season.csv'); // Replace with the actual path to your CSV
+
+        // Define the year range
+        const startYear = 1963;
+        const endYear = 2023;
+
+        // Extract and sort seasons, filtering out those not in the desired range
+        const seasons = [...new Set(data.map(item => item.Year))]
+            .filter(year => year >= startYear && year <= endYear)
+            .sort((a, b) => a - b);
+
+        seasons.forEach(season => {
+            const seasonData = data.filter(item => item.Year === season);
+            const chartWrapper = document.createElement('div');
+            chartWrapper.className = 'chartWrapper';
+            document.getElementById('scrollContainer').appendChild(chartWrapper);
+            const canvas = document.createElement('canvas');
+            chartWrapper.appendChild(canvas);
+
+            // Get the box height for this season
+            const boxHeight = boxHeightsForSeasons[season] || 0; // Use 0 if no data for the season
+
+            createChart(canvas, seasonData, season, globalMaxWavPerSeason, boxHeight); // Pass the height here
+        });
+    }
+
+    let boxHeightsForSeasons;
+
+    
+    document.addEventListener('DOMContentLoaded', async function() {
+        document.getElementById('chartTitle').textContent = `NBA Draft Value: Atlanta Hawks`;
+        // Fetch the average wAV data and store it in the variable
+        boxHeightsForSeasons = await fetchAverageWavData('average_wav_per_season.csv');
+        await generateCharts('csvFiles/HawksDraft.csv', boxHeightsForSeasons);
+    });
+    
+    
+    
+</script>
+
+
+</body>
+</html>
+
+
